@@ -2,6 +2,7 @@ import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import express, { Express } from "express";
 import cors from "cors";
+import { prismaClient } from "./lib/db";
 
 async function createApp() {
   const app: Express = express();
@@ -13,12 +14,45 @@ async function createApp() {
   const typeDefs = `
     type Query {
       hello: String
+      say(name: String): String
     }
+    type Mutation {
+    createUser(email: String!, password: String!, firstName: String!, lastName: String!, profileImageUrl: String): Boolean}
   `;
 
   const resolvers = {
     Query: {
       hello: () => "world",
+    },
+    Mutation: {
+      createUser: async (
+        _: any,
+        {
+          email,
+          password,
+          firstName,
+          lastName,
+          profileImageUrl,
+        }: {
+          email: string;
+          password: string;
+          firstName: string;
+          lastName: string;
+          profileImageUrl: string;
+        }
+      ) => {
+        await prismaClient.user.create({
+          data: {
+            email,
+            password,
+            firstName,
+            lastName,
+            profileImageUrl,
+            salt: "salt",
+          },
+        });
+        return true;
+      },
     },
   };
 
